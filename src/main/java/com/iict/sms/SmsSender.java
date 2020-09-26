@@ -24,7 +24,7 @@ public class SmsSender {
         Connection connection = null;
         try {
             Class.forName("oracle.jdbc.driver.OracleDriver");
-            connection = DriverManager.getConnection("jdbc:oracle:thin:@202.5.36.108:1421:bdb", "bgdcl786", "bgdcl7861#");
+            connection = DriverManager.getConnection("jdbc:oracle:thin:@192.168.0.230:1521:bdb", "bgdcl786", "bgdcl7861#");
         } catch (Exception e ) {
             System.out.println("JDBC Driver not found! "+ e.getMessage());
             return;
@@ -115,7 +115,7 @@ public class SmsSender {
 
         try {
             connection = DriverManager.getConnection(
-                    "jdbc:oracle:thin:@202.5.36.108:1421:bdb", "bgdcl786", "bgdcl7861#");
+                    "jdbc:oracle:thin:@192.168.0.230:1521:bdb", "bgdcl786", "bgdcl7861#");
         } catch (SQLException e) {
             System.out.println("Failed to Connect to Database!");
             return;
