@@ -1,12 +1,10 @@
 package com.iict.sms;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.sun.jersey.api.client.WebResource;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+import javax.net.ssl.*;
+import java.security.*;
+import java.security.cert.X509Certificate;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -14,8 +12,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 /**
- *
  * @author ASUS
  */
 public class SmsSender {
@@ -25,8 +23,8 @@ public class SmsSender {
         try {
             Class.forName("oracle.jdbc.driver.OracleDriver");
             connection = DriverManager.getConnection("jdbc:oracle:thin:@192.168.0.230:1521:bdb", "bgdcl786", "bgdcl7861#");
-        } catch (Exception e ) {
-            System.out.println("JDBC Driver not found! "+ e.getMessage());
+        } catch (Exception e) {
+            System.out.println("JDBC Driver not found! " + e.getMessage());
             return;
         }
 
@@ -45,7 +43,7 @@ public class SmsSender {
                 Statement stmt3 = connection.createStatement();
                 ResultSet rs = stmt.executeQuery(selectQuery);
 
-                while ( rs.next() ) {
+                while (rs.next()) {
                     rowNumber = Integer.parseInt(rs.getString("rowNumber"));
 
 //                    System.out.println("Number of rows- " +rowNumber);
@@ -54,7 +52,7 @@ public class SmsSender {
 
                 ResultSet rs2 = stmt.executeQuery(selectAllValuesQuery);
 
-                while(rs2.next() && rowNumber > 0){
+                while (rs2.next() && rowNumber > 0) {
 
                     // find the record
                     String id = rs2.getString("id");
@@ -73,15 +71,15 @@ public class SmsSender {
                             "                              SENT_TIME,\n" +
                             "                              CUST_CODE)\n" +
                             "     VALUES ( ( (SELECT NVL (MAX (id), 0) + 1 FROM SMS_SENT)),\n" +
-                            "             '"+ phone +"',\n" +
-                            "             '"+ message +"',\n" +
+                            "             '" + phone + "',\n" +
+                            "             '" + message + "',\n" +
                             "             SYSTIMESTAMP,\n" +
-                            "             '"+ custCode +"')";
+                            "             '" + custCode + "')";
 
                     stmt2.executeUpdate(insertQuery);
 
                     // delete from sms_to_send
-                    String deleteQuery = "DELETE FROM SMS_TO_SEND WHERE ID = '"+ id +"'";
+                    String deleteQuery = "DELETE FROM SMS_TO_SEND WHERE ID = '" + id + "'";
                     stmt3.executeUpdate(deleteQuery);
 
                     rowNumber--;
@@ -103,10 +101,14 @@ public class SmsSender {
         }
     }
 
+//    public static void main(String[] args) {
+//        sendSMS("01918288265", "Hello, This is Test SMS. \nYour Due is 1000 BDT");
+//    }
+
     public static void sendFailed(String phone, String message) {
         try {
             Class.forName("oracle.jdbc.driver.OracleDriver");
-        } catch (ClassNotFoundException e ) {
+        } catch (ClassNotFoundException e) {
             System.out.println("JDBC Driver not found!");
             return;
         }
@@ -135,8 +137,8 @@ public class SmsSender {
                         "                              MESSAGE,\n" +
                         "                              FAILED_TIME\n" +
                         "     VALUES ( ( (SELECT NVL (MAX (id), 0) + 1 FROM SMS_FAILED)),\n" +
-                        "             '"+ phone +"',\n" +
-                        "             '"+ message +",\n"+
+                        "             '" + phone + "',\n" +
+                        "             '" + message + ",\n" +
                         "             SYSTIMESTAMP )";
 
                 stmt.executeUpdate(insertQuery);
@@ -152,37 +154,47 @@ public class SmsSender {
         }
     }
 
-    public static String sendSMS(String msisdn, String sms_string) {
-        try
-        {
-            //Creating a Client
-            Client client = Client.create();
-            String url = "http://sms.sslwireless.com/pushapi/dynamic/server.php?msisdn=" + URLEncoder.encode(msisdn, "UTF-8") + "&sms=" + URLEncoder.encode(sms_string, "UTF-8") + "&user=" + URLEncoder.encode("bgdclapi", "UTF-8") + "&pass=" + URLEncoder.encode("93P494j=", "UTF-8") + "&csmsid=" + URLEncoder.encode("1234567890", "UTF-8") + "&sid=" + URLEncoder.encode("NiceITBGDCL", "UTF-8");
-            WebResource webResource = client
-                    .resource(url); //?msisdn=8801911763079&sms=SMS&user=sgcl&pass=A1r3i5f7&sid=KGDCL&csmsid=123456789"
-            //Format of the response accepted
-            ClientResponse response = webResource.accept("application/xml")
-                    .get(ClientResponse.class);
-            //Check for the response is success or not
-            if (response.getStatus() != 200)
-            {
-                // throw new Exception("Exception Occured - HTTP Error Code : "
-                // response.getStatus());
-                sendFailed(msisdn, sms_string);
+    public static void disableSSL() {
+        try {
+            // Create a trust manager that does not validate certificate chains
+            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                }
+
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                }
             }
+            };
 
-            // String output = response.getEntity(String.class);
+            // Install the all-trusting trust manager
+            SSLContext sc = SSLContext.getInstance("SSL");
+            sc.init(null, trustAllCerts, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
 
-            // System.out.println("Fetching Output....");
-            // System.out.println(output);
+            // Create all-trusting host name verifier
+            HostnameVerifier allHostsValid = (hostname, session) -> true;
 
-        } catch (UniformInterfaceException e)
-        {
-            System.out.println(e.getMessage());
-        } catch (UnsupportedEncodingException e) {
-            System.out.println(e.getMessage());
-         }
-        return "Successful";
+            // Install the all-trusting host verifier
+            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
+            e.printStackTrace();
+        }
     }
 
+    public static String sendSMS(String msisdn, String sms_string) {
+        disableSSL();
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "https://bulksms.teletalk.com.bd/link_sms_send.php?op=SMS&user=BGDCLCUM&pass=BgDclcu@R87&mobile=" + msisdn + "&charset=ASCII&sms=" + sms_string;
+        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+        if(response.getStatusCode().is2xxSuccessful() && response.getBody().contains("<reply>SUCCESS")){
+
+        }else {
+            sendFailed(msisdn, sms_string);
+        }
+        return "Successful";
+    }
 }
