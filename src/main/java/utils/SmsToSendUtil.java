@@ -1,5 +1,6 @@
 package utils;
 
+import com.iict.sms.enums.ExternalApiResponseEnum;
 import connection.DbConnect;
 import model.SmsToSend;
 
@@ -8,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static utils.QueryConstraints.SmsToSendQueries.DELETE_BY_ID;
 import static utils.QueryConstraints.SmsToSendQueries.getSmsFailedInsertQuery;
@@ -47,16 +49,17 @@ public final class SmsToSendUtil {
             String message = smsToSend.getMessage();
             String phone = smsToSend.getPhoneNo();
             String custCode = smsToSend.getCustCode();
-
-            Boolean isSent = ExternalApiCallUtil.sendSMS(phone , message);
-
-            if(isSent) {
+            Map<String ,Object> map = ExternalApiCallUtil.sendSMS(phone , message);
+            Boolean isSend = (Boolean) map.get(ExternalApiResponseEnum.IS_SENT.name());
+            if(isSend) {
                 sendDataInsert(id , phone , message, custCode);
             } else {
-                failedDataInsert(id , phone , message);
+                String url = (String) map.get(ExternalApiResponseEnum.URL.name());
+                String response = (String) map.get(ExternalApiResponseEnum.RESPONSE.name());
+                String bgdclLog = (String) map.get(ExternalApiResponseEnum.BGDCL_LOG.name());
+                failedDataInsert(id , phone , message , url , response, bgdclLog);
             }
         }
-
     }
 
     public static void sendDataInsert(long id , String phone , String message , String custCode){
@@ -82,10 +85,10 @@ public final class SmsToSendUtil {
             e.printStackTrace();
         }
     }
-    public static void failedDataInsert(long id , String phone , String message){
+    public static void failedDataInsert(long id , String phone , String message , String url , String response, String bgdclLog){
         try{
             Connection connection = DbConnect.getConnect();
-            PreparedStatement preStatement = connection.prepareStatement(getSmsFailedInsertQuery(phone, message));
+            PreparedStatement preStatement = connection.prepareStatement(getSmsFailedInsertQuery(phone, message , url , response, bgdclLog));
             preStatement.executeUpdate();
             deleteSmsToSendData(id);
             preStatement.close();

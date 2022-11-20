@@ -1,5 +1,6 @@
 package utils;
 
+import com.iict.sms.enums.ExternalApiResponseEnum;
 import connection.DbConnect;
 import model.SmsEmailNotification;
 
@@ -8,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public final class SmsEmailNotificationUtil {
 
@@ -44,7 +46,9 @@ public final class SmsEmailNotificationUtil {
     public static void updatePendingList(List<SmsEmailNotification> list) {
         try {
             for (SmsEmailNotification smsEmailNotificationModel : list) {
-              Boolean isSmsSent = ExternalApiCallUtil.sendSMS(smsEmailNotificationModel.getMobile(), smsEmailNotificationModel.getMessage());
+
+                Map<String ,Object> map = ExternalApiCallUtil.sendSMS(smsEmailNotificationModel.getMobile(), smsEmailNotificationModel.getMessage());
+                Boolean isSmsSent = (Boolean) map.get(ExternalApiResponseEnum.IS_SENT.name());
               String status = "SENT";
               if(!isSmsSent){
                   status = "FAILED";
