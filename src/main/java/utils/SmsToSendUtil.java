@@ -4,10 +4,7 @@ import com.iict.sms.enums.ExternalApiResponseEnum;
 import connection.DbConnect;
 import model.SmsToSend;
 
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -69,11 +66,7 @@ public final class SmsToSendUtil {
             if(connection != null){
                 Long nextId = getNextId(TableConstraints.SMS_SENT);
                 if(nextId != null){
-                    PreparedStatement preStatement = connection.prepareStatement(SMS_SENT_INSERT);
-                    preStatement.setLong(1, nextId);
-                    preStatement.setString(2, phone);
-                    preStatement.setString(3, message);
-                    preStatement.setDate(4, new Date(new java.util.Date().getTime()));
+                    PreparedStatement preStatement = getPreparedStatementOnResult(connection, SMS_SENT_INSERT, nextId, phone, message);
                     preStatement.setString(5, custCode);
                     preStatement.executeUpdate();
                     deleteSmsToSendData(id);
@@ -104,11 +97,7 @@ public final class SmsToSendUtil {
             if(connection != null){
                 Long nextId = getNextId(TableConstraints.SMS_FAILED);
                 if(nextId != null){
-                    PreparedStatement preStatement = connection.prepareStatement(SMS_FAILED_INSERT);
-                    preStatement.setLong(1, nextId);
-                    preStatement.setString(2, phone);
-                    preStatement.setString(3, message);
-                    preStatement.setDate(4, new Date(new java.util.Date().getTime()));
+                    PreparedStatement preStatement = getPreparedStatementOnResult(connection, SMS_FAILED_INSERT, nextId, phone, message);
                     preStatement.setString(5, url);
                     preStatement.setString(6, response);
                     preStatement.setString(7, bgdclLog);
@@ -121,6 +110,15 @@ public final class SmsToSendUtil {
         catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static PreparedStatement getPreparedStatementOnResult(Connection connection, String query, Long nextId, String phone, String message) throws SQLException {
+        PreparedStatement preStatement = connection.prepareStatement(query);
+        preStatement.setLong(1, nextId);
+        preStatement.setString(2, phone);
+        preStatement.setString(3, message);
+        preStatement.setDate(4, new Date(new java.util.Date().getTime()));
+        return preStatement;
     }
 
     public static Long getNextId(TableConstraints tableConstraints){
