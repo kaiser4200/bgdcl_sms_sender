@@ -17,12 +17,12 @@ public class DbConnect {
         try {
             if (conn == null) {
                 Class.forName(DRIVER);
-                conn = DriverManager.getConnection( DBConstraints.OracleConstraints.URL, DBConstraints.OracleConstraints.USER, DBConstraints.OracleConstraints.PASSWORD);
+                return DriverManager.getConnection( DBConstraints.OracleConstraints.URL, DBConstraints.OracleConstraints.USER, DBConstraints.OracleConstraints.PASSWORD);
             }
+            return conn;
         } catch (Exception e) {
             e.printStackTrace();
+            return getConnect();
         }
-
-        return conn;
     }
 }

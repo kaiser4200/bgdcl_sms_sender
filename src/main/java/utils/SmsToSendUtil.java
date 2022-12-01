@@ -5,6 +5,7 @@ import connection.DbConnect;
 import model.SmsToSend;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -20,31 +21,32 @@ public final class SmsToSendUtil {
     }
 
     public static List<SmsToSend> getAllPendingSms() {
+        List<SmsToSend> list = new ArrayList<>();
         try {
             Connection connection = DbConnect.getConnect();
-            PreparedStatement preStatement = connection.prepareStatement(QueryConstraints.SmsToSendQueries.GET_ALL);
-            ResultSet resultSet = preStatement.executeQuery();
-            List<SmsToSend> list = new ArrayList<>();
-            while (resultSet.next()) {
-                SmsToSend smsToSend = new SmsToSend();
-                smsToSend.setId(resultSet.getLong("id"));
-                smsToSend.setMessage(resultSet.getString("message"));
-                smsToSend.setPhoneNo(resultSet.getString("PHONE_NUMBER"));
-                smsToSend.setCustCode(resultSet.getString("CUST_CODE"));
-                list.add(smsToSend);
+            if(connection != null){
+                PreparedStatement preStatement = connection.prepareStatement(QueryConstraints.SmsToSendQueries.GET_ALL);
+                ResultSet resultSet = preStatement.executeQuery();
+                while (resultSet.next()) {
+                    SmsToSend smsToSend = new SmsToSend();
+                    smsToSend.setId(resultSet.getLong("id"));
+                    smsToSend.setMessage(resultSet.getString("message"));
+                    smsToSend.setPhoneNo(resultSet.getString("PHONE_NUMBER"));
+                    smsToSend.setCustCode(resultSet.getString("CUST_CODE"));
+                    list.add(smsToSend);
+                }
+                preStatement.close();
             }
-            preStatement.close();
             return list;
         } catch (Exception e) {
             e.printStackTrace();
+            return list;
         }
-        return new ArrayList<>();
     }
 
     public static void dataInsert(List<SmsToSend> list){
 
         for (SmsToSend smsToSend : list) {
-
             long id = smsToSend.getId();
             String message = smsToSend.getMessage();
             String phone = smsToSend.getPhoneNo();
@@ -65,10 +67,20 @@ public final class SmsToSendUtil {
     public static void sendDataInsert(long id , String phone , String message , String custCode){
         try{
             Connection connection = DbConnect.getConnect();
-            PreparedStatement preStatement = connection.prepareStatement(QueryConstraints.SmsToSendQueries.getSmsSentInsertQuery(phone, message, custCode));
-            preStatement.executeUpdate();
-            deleteSmsToSendData(id);
-            preStatement.close();
+            if(connection != null){
+                Long nextId = getNextId(TableConstraints.SMS_SENT.getTableName(), TableConstraints.SMS_SENT.getIdColumnName());
+                if(nextId != null){
+                    PreparedStatement preStatement = connection.prepareStatement(QueryConstraints.SmsToSendQueries.getSmsSentInsertQuery());
+                    preStatement.setLong(1, nextId);
+                    preStatement.setString(2, phone);
+                    preStatement.setString(3, message);
+                    preStatement.setDate(4, new Date(new java.util.Date().getTime()));
+                    preStatement.setString(5, custCode);
+                    preStatement.executeUpdate();
+                    deleteSmsToSendData(id);
+                    preStatement.close();
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -77,10 +89,12 @@ public final class SmsToSendUtil {
     public static void deleteSmsToSendData(long id){
         try{
         Connection connection = DbConnect.getConnect();
-        PreparedStatement preStatement = connection.prepareStatement(DELETE_BY_ID);
-        preStatement.setLong(1, id);
-        preStatement.executeQuery();
-        preStatement.close();
+        if(connection != null){
+            PreparedStatement preStatement = connection.prepareStatement(DELETE_BY_ID);
+            preStatement.setLong(1, id);
+            preStatement.executeQuery();
+            preStatement.close();
+        }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -88,13 +102,45 @@ public final class SmsToSendUtil {
     public static void failedDataInsert(long id , String phone , String message , String url , String response, String bgdclLog){
         try{
             Connection connection = DbConnect.getConnect();
-            PreparedStatement preStatement = connection.prepareStatement(getSmsFailedInsertQuery(phone, message , url , response, bgdclLog));
-            preStatement.executeUpdate();
-            deleteSmsToSendData(id);
-            preStatement.close();
+            if(connection != null){
+                Long nextId = getNextId(TableConstraints.SMS_FAILED.getTableName(), TableConstraints.SMS_FAILED.getIdColumnName());
+                if(nextId != null){
+                    PreparedStatement preStatement = connection.prepareStatement(getSmsFailedInsertQuery());
+                    preStatement.setLong(1, nextId);
+                    preStatement.setString(2, phone);
+                    preStatement.setString(3, message);
+                    preStatement.setDate(4, new Date(new java.util.Date().getTime()));
+                    preStatement.setString(5, url);
+                    preStatement.setString(6, response);
+                    preStatement.setString(7, bgdclLog);
+                    preStatement.executeUpdate();
+                    deleteSmsToSendData(id);
+                    preStatement.close();
+                }
+            }
         }
         catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static Long getNextId(String tableName, String idColumnName){
+        try {
+            Long maxId = null;
+            Connection connection = DbConnect.getConnect();
+            if(connection != null){
+                String query = "SELECT NVL (MAX ("+idColumnName+"), 0) + 1 as NEXT_ID FROM " + tableName;
+                PreparedStatement preStatement = connection.prepareStatement(query);
+                ResultSet resultSet = preStatement.executeQuery();
+                while (resultSet.next()) {
+                    maxId = resultSet.getLong("NEXT_ID");
+                }
+                preStatement.close();
+            }
+            return maxId;
+        }catch (Exception e){
+            e.printStackTrace();
+            return null;
         }
     }
 }
