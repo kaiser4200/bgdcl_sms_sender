@@ -68,7 +68,7 @@ public final class SmsToSendUtil {
         try{
             Connection connection = DbConnect.getConnect();
             if(connection != null){
-                Long nextId = getNextId(TableConstraints.SMS_SENT.getTableName(), TableConstraints.SMS_SENT.getIdColumnName());
+                Long nextId = getNextId(TableConstraints.SMS_SENT);
                 if(nextId != null){
                     PreparedStatement preStatement = connection.prepareStatement(QueryConstraints.SmsToSendQueries.getSmsSentInsertQuery());
                     preStatement.setLong(1, nextId);
@@ -103,7 +103,7 @@ public final class SmsToSendUtil {
         try{
             Connection connection = DbConnect.getConnect();
             if(connection != null){
-                Long nextId = getNextId(TableConstraints.SMS_FAILED.getTableName(), TableConstraints.SMS_FAILED.getIdColumnName());
+                Long nextId = getNextId(TableConstraints.SMS_FAILED);
                 if(nextId != null){
                     PreparedStatement preStatement = connection.prepareStatement(getSmsFailedInsertQuery());
                     preStatement.setLong(1, nextId);
@@ -124,12 +124,12 @@ public final class SmsToSendUtil {
         }
     }
 
-    public static Long getNextId(String tableName, String idColumnName){
+    public static Long getNextId(TableConstraints tableConstraints){
         try {
             Long maxId = null;
             Connection connection = DbConnect.getConnect();
             if(connection != null){
-                String query = "SELECT NVL (MAX ("+idColumnName+"), 0) + 1 as NEXT_ID FROM " + tableName;
+                String query = QueryConstraints.SmsToSendQueries.getNextIdQuery(tableConstraints);
                 PreparedStatement preStatement = connection.prepareStatement(query);
                 ResultSet resultSet = preStatement.executeQuery();
                 while (resultSet.next()) {

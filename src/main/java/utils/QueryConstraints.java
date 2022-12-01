@@ -10,6 +10,10 @@ public final class QueryConstraints {
             return "insert into SMS_SENT (ID, PHONE_NUMBER, MESSAGE, SENT_TIME, CUST_CODE)VALUES (?, ?, ?, ?, ?)";
         }
 
+        public static String getNextIdQuery(TableConstraints tableConstraints){
+            return "SELECT NVL (MAX ("+tableConstraints.getIdColumnName()+"), 0) + 1 as NEXT_ID FROM " + tableConstraints.getTableName();
+        }
+
         public static String getSmsFailedInsertQuery(){
             return "insert into SMS_FAILED (ID, PHONE_NUMBER, MESSAGE, Failed_TIME, SMS_PROVIDER_REQUEST, SMS_PROVIDER_RESPONSE, BGDCL_LOG)VALUES (?, ?, ?, ?, ?, ?, ?)";
         }
