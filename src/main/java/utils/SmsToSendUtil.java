@@ -12,8 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static utils.QueryConstraints.SmsToSendQueries.DELETE_BY_ID;
-import static utils.QueryConstraints.SmsToSendQueries.getSmsFailedInsertQuery;
+import static utils.QueryConstraints.SmsToSendQueries.*;
 
 public final class SmsToSendUtil {
     private SmsToSendUtil(){
@@ -70,7 +69,7 @@ public final class SmsToSendUtil {
             if(connection != null){
                 Long nextId = getNextId(TableConstraints.SMS_SENT);
                 if(nextId != null){
-                    PreparedStatement preStatement = connection.prepareStatement(QueryConstraints.SmsToSendQueries.getSmsSentInsertQuery());
+                    PreparedStatement preStatement = connection.prepareStatement(SMS_SENT_INSERT);
                     preStatement.setLong(1, nextId);
                     preStatement.setString(2, phone);
                     preStatement.setString(3, message);
@@ -105,7 +104,7 @@ public final class SmsToSendUtil {
             if(connection != null){
                 Long nextId = getNextId(TableConstraints.SMS_FAILED);
                 if(nextId != null){
-                    PreparedStatement preStatement = connection.prepareStatement(getSmsFailedInsertQuery());
+                    PreparedStatement preStatement = connection.prepareStatement(SMS_FAILED_INSERT);
                     preStatement.setLong(1, nextId);
                     preStatement.setString(2, phone);
                     preStatement.setString(3, message);
