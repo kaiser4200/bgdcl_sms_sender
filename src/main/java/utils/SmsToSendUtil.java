@@ -6,6 +6,7 @@ import model.SmsToSend;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
@@ -67,7 +68,7 @@ public final class SmsToSendUtil {
                 Long nextId = getNextId(TableConstraints.SMS_SENT);
                 if(nextId != null){
                     PreparedStatement preStatement = getPreparedStatementOnResult(connection, SMS_SENT_INSERT, nextId, phone, message);
-                    preStatement.setString(5, custCode);
+                    preStatement.setString(4, custCode);
                     preStatement.executeUpdate();
                     deleteSmsToSendData(id);
                     preStatement.close();
@@ -98,9 +99,9 @@ public final class SmsToSendUtil {
                 Long nextId = getNextId(TableConstraints.SMS_FAILED);
                 if(nextId != null){
                     PreparedStatement preStatement = getPreparedStatementOnResult(connection, SMS_FAILED_INSERT, nextId, phone, message);
-                    preStatement.setString(5, url);
-                    preStatement.setString(6, response);
-                    preStatement.setString(7, bgdclLog);
+                    preStatement.setString(4, url);
+                    preStatement.setString(5, response);
+                    preStatement.setString(6, bgdclLog);
                     preStatement.executeUpdate();
                     deleteSmsToSendData(id);
                     preStatement.close();
@@ -117,8 +118,19 @@ public final class SmsToSendUtil {
         preStatement.setLong(1, nextId);
         preStatement.setString(2, phone);
         preStatement.setString(3, message);
-        preStatement.setDate(4, new Date(new java.util.Date().getTime()));
         return preStatement;
+    }
+
+    private static long getCurrentTimestamp(){
+        java.util.Date currentDate = new java.util.Date();
+        return getTimestamp(currentDate);
+    }
+
+    private static long getTimestamp(java.util.Date date){
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.set(Calendar.MILLISECOND, 0);
+        return date.getTime();
     }
 
     public static Long getNextId(TableConstraints tableConstraints){
